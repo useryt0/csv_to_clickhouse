@@ -1,0 +1,16 @@
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+*.so
+
+venv/
+env/
+.env/
+.venv/
+ENV/
+*.env
+
+*.log
+*.DS_Store
+
+latest

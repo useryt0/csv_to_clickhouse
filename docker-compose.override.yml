@@ -1,0 +1,21 @@
+services:
+  airflow-scheduler:
+    build: .
+    env_file:
+      - .env
+  airflow-worker:
+    build: .
+    env_file:
+      - .env
+  airflow-triggerer:
+    build: .
+    env_file:
+      - .env
+  airflow-dag-processor:
+    build: .
+    env_file:
+      - .env
+  airflow-apiserver:
+    build: .
+    env_file:
+      - .env
