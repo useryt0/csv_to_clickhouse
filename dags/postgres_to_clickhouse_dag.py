@@ -20,6 +20,7 @@ SOURCE_VIEW = os.getenv('SOURCE_VIEW') #cleaned table in postgres
 TARGET_TABLE = os.getenv('TARGET_TABLE') #destination table in clickhouse
 TARGET_DB = os.getenv('TARGET_DB') #destination db in clickhouse
 POSTGRES_CONN_ID = os.getenv('POSTGRES_CONN_ID') #connection to postgres in airflow
+CLICKHOUSE_POSTGRES_VIEW = os.getenv('CLICKHOUSE_POSTGRES_VIEW')
 
 DATA_DIR = "/opt/airflow/data/csv"
 DB_CONN_STRING = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
@@ -93,17 +94,32 @@ def taskflow():
         sql=create_clean_table_sql
     )
     
+    #creates an table in clickhouse with postgresEngine that is synced with the cleaned table in postgres
+    with open("/opt/airflow/data/sql/create_ps_to_ch_conn.sql") as f:
+        raw_sql = f.read()
+        
+    create_clickhouse_postgres_view_sql = raw_sql.format(
+        TARGET_TABLE=TARGET_TABLE,
+        TARGET_DB=TARGET_DB,
+        CLICKHOUSE_POSTGRES_VIEW=CLICKHOUSE_POSTGRES_VIEW
+    )
+
+    create_clickhouse_postgres_view = ClickHouseOperator(
+        
+        task_id="create_clickhouse_postgres_view",
+        sql=create_clickhouse_postgres_view_sql
+    )
+
+
+    #copies rows from local clickhouse table from prev task into the final clickhouse table
     with open("/opt/airflow/data/sql/ingest_data.sql") as f:
         raw_sql = f.read()
 
 
     ingest_data_sql = raw_sql.format(
-        POSTGRES_URI=f"{POSTGRES_HOST}:{POSTGRES_PORT}",
-        POSTGRES_DB=POSTGRES_DB,
-        POSTGRES_USER=POSTGRES_USER,
-        POSTGRES_PASSWORD=POSTGRES_PASSWORD,
-        SOURCE_VIEW=SOURCE_VIEW,
         TARGET_TABLE=TARGET_TABLE,
+        TARGET_DB=TARGET_DB,
+        CLICKHOUSE_POSTGRES_VIEW=CLICKHOUSE_POSTGRES_VIEW
     )
 
     insert_cleaned_data = ClickHouseOperator(
@@ -112,6 +128,6 @@ def taskflow():
         sql=ingest_data_sql
     )
 
-    load_csv_to_postgres >> create_clickhouse_table >> create_cleaned_table  >> insert_cleaned_data
+    load_csv_to_postgres >> create_clickhouse_table >> create_cleaned_table >> create_clickhouse_postgres_view >> insert_cleaned_data
 
 taskflow()
