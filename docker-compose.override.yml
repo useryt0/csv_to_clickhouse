@@ -1,21 +1,57 @@
+networks:
+  ndsnet:
+    driver: bridge
 services:
   airflow-scheduler:
     build: .
     env_file:
       - .env
+    networks:
+      - ndsnet
   airflow-worker:
     build: .
     env_file:
       - .env
+    networks:
+      - ndsnet
+
   airflow-triggerer:
     build: .
     env_file:
       - .env
+    networks:
+      - ndsnet
   airflow-dag-processor:
     build: .
     env_file:
       - .env
+    networks:
+      - ndsnet
+      
   airflow-apiserver:
     build: .
     env_file:
       - .env
+    networks:
+      - ndsnet
+  minio:
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    container_name: minio
+    hostname: minio
+    restart: always
+    # volumes:
+    #   - ./include/data/minio:/data
+    ports:
+      - 9002:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - ndsnet

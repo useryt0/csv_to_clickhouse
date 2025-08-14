@@ -97,6 +97,8 @@ services:
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
       - ./dags/data:/data
+    networks:
+      - ndsnet
 
 
     healthcheck:
@@ -119,6 +121,8 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    networks:
+      - ndsnet
 
   airflow-apiserver:
     <<: *airflow-common
@@ -136,6 +140,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - ndsnet
 
   airflow-scheduler:
     <<: *airflow-common
@@ -151,6 +157,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+    networks:
+      - ndsnet
 
   airflow-dag-processor:
     <<: *airflow-common
@@ -341,7 +349,7 @@ services:
     container_name: clickhouse
     ports:
       - "8123:8123"
-      - "9000:9000"
+      - "9003:9000"
     environment:
       - CLICKHOUSE_DB=default
       - CLICKHOUSE_USER=default
@@ -353,6 +361,8 @@ services:
       nofile:
         soft: 262144
         hard: 262144
+    networks:
+      - ndsnet
 
 volumes:
   postgres-db-volume:
