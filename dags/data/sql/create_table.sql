@@ -12,5 +12,5 @@ CREATE TABLE {TARGET_DB}.{TARGET_TABLE}
     `type` LowCardinality(String)
 )
 ENGINE = MergeTree
-ORDER BY (player_name, club_id, date)
+ORDER BY (date, game_id, player_id)
 SETTINGS index_granularity = 8192
